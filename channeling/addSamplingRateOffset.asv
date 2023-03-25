@@ -1,0 +1,32 @@
+function y=addSamplingRateOffset(x,fs,fc)
+%Sampling offset, which is determined by the clock offset (ppm) and
+%     sampling rate, fs. This method first generates a clock offset value,
+%     offset, in ppm, based on the specified maximum clock offset and
+%     calculates the offset factor, C, as C = (1+offset/1e6), where offset
+%     is the clock offset in ppm. The signal is resampled using interp1
+%     function at a new sampling rate of C*fs.
+    maxOffset = 5;
+    clockOffset = (rand() * 2*maxOffset) - maxOffset;
+    C = 1 + clockOffset / 1e6;
+      
+      % Add frequency offset
+      outInt1 = applyFrequencyOffset(obj, in);
+
+      % Add sampling time drift
+      out = applyTimingDrift(obj, outInt1);
+       obj.FrequencyShifter.FrequencyOffset = ...
+        -(obj.C-1)*obj.CenterFrequency;
+      out = obj.FrequencyShifter(in);
+      
+      %applyTimingDrift Apply sampling time drift
+      %   Y=applyTimingDrift(CH,X) applies sampling time drift to
+      %   input, X, based on the clock offset for the current frame and
+      %   specified sampling rate, Fs. X is resampled at C*Fs Hz using
+      %   linear interpolation.
+      
+      originalFs = obj.SampleRate;
+      x = (0:length(in)-1)' / originalFs;
+      newFs = originalFs * obj.C;
+      xp = (0:length(in)-1)' / newFs;
+      out = interp1(x, in, xp);
+end
